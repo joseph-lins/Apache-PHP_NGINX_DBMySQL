@@ -32,7 +32,7 @@ nodes:
     count: 1
     displayName: NGINX Load Balancer
 
-  - nodeType: apachephp
+  - nodeType: apache
     nodeGroup: cp
     cloudlets: 8
     count: 1
