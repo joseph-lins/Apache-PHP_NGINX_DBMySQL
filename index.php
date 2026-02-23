@@ -89,7 +89,7 @@ $lastId = $pdo->lastInsertId();
       <div class="meta">
         <div>Registro gravado no MySQL: <code>#<?php echo html($lastId); ?></code></div>
         <div>Banco: <code><?php echo html(DB_NAME); ?></code> · Tabela: <code>access_log</code></div>
-        <div>Consulta: <code>SELECT * FROM access_log ORDER BY id DESC LIMIT 20;</code></div>
+        <div>Consulta: <code>SELECT * FROM demo_access.access_log ORDER BY id DESC LIMIT 20;</code></div>
       </div>
     </div>
   </div>
