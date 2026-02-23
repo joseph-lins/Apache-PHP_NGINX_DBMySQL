@@ -1,10 +1,16 @@
 type: install
-id: lab-apachephp-nginx-mysql-image-bsb
-version: 2.2 !
-name: Lab ApachePHP + NGINX + MySQL 
+id: lab-apache-nginx-mysql-bsb
+version: 2.4 ! 
+name: Lab Apache + NGINX + MySQL (BSB)
 
 description:
-  text:  NGINX + ApachePHP + MySQL 
+  text: NGINX (LB) + Apache (stack) + MySQL (image) com deploy via Git e db_config.php gerado no webroot.
+
+env:
+  region: bsb
+  shortdomain: lab-apache-nginx-mysql
+  displayName: Lab Apache + NGINX + MySQL
+  sslstate: false
 
 globals:
   PASSWD: ${fn.password}
@@ -27,16 +33,6 @@ settings:
       default: "main"
 
     - type: list
-      name: apachephp_tag
-      caption:
-        pt: "Versão do ApachePHP"
-        en: "ApachePHP version"
-      required: true
-      values:
-        - value: "2.4.66-php-8.5.3"
-          caption: "Apache 2.4.66 + PHP 8.5.3"
-
-    - type: list
       name: mysql_tag
       caption:
         pt: "Versão do MySQL"
@@ -53,12 +49,11 @@ nodes:
     count: 1
     displayName: NGINX Load Balancer
 
-  - fixedCloudlets: 1
-    cloudlets: 8
-    image: jelastic/apachephp:${settings.apachephp_tag}
+  - nodeType: apache
     nodeGroup: cp
+    cloudlets: 8
     count: 1
-    displayName: ApachePHP
+    displayName: Apache (PHP via stack)
 
   - fixedCloudlets: 1
     cloudlets: 16
@@ -72,10 +67,8 @@ nodes:
 skipNodeEmails: true
 
 onInstall:
-  # Define senha do root no MySQL (rodar no layer do banco)
   - cmd [sqldb]: /bin/bash /usr/bin/jem passwd set -p ${globals.PASSWD} -u root --timeout 3570
 
-  # Deploy do código + cria config do DB no webroot (sem depender de getenv)
   - cmd [cp]:
       - |-
         set -e
@@ -84,7 +77,7 @@ onInstall:
         mkdir -p "$WEBROOT"
         git clone --depth 1 -b ${settings.git_branch} ${settings.git_repo} "$WEBROOT"
 
-        cat > "$WEBROOT/db_config.php" <<'PHP'
+        cat > "$WEBROOT/db_config.php" <<PHP
         <?php
         define('DB_HOST', '${globals.DBHOST}');
         define('DB_PORT', '${globals.DBPORT}');
@@ -98,6 +91,9 @@ onInstall:
 success:
   text: |
     Ambiente criado com sucesso.
+
+    Stack Apache: via nodeType "apache" (usa as versões do painel na região bsb)
+    MySQL: jelastic/mysql:${settings.mysql_tag}
 
     Credenciais do MySQL (ROOT):
     Host interno: ${globals.DBHOST}:${globals.DBPORT}
