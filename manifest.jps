@@ -1,10 +1,10 @@
 type: install
 id: lab-apachephp-nginx-mysql-image-bsb
 version: 1.5
-name: Lab ApachePHP + NGINX + MySQL (BSB - FIX image)
+name: Lab ApachePHP + NGINX + MySQL 
 
 description:
-  text: Cria NGINX + ApachePHP + MySQL via imagens jelastic (corrige bug do nodeType mysql na região bsb), gera senha root e faz deploy via Git.
+  text: NGINX + ApachePHP + MySQL
 
 globals:
   PASSWD: ${fn.password}
