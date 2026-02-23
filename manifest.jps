@@ -1,10 +1,10 @@
 type: install
 id: lab-apachephp-nginx-mysql-image-bsb
-version: 1.7
-name: Lab ApachePHP + NGINX + MySQL
+version: 1.6
+name: Lab ApachePHP + NGINX + MySQL (BSB - FIX image + DB config)
 
 description:
-  text: NGINX + ApachePHP + MySQL
+  text: Cria NGINX + ApachePHP + MySQL via imagens jelastic, gera senha root, faz deploy via Git e cria arquivo de config do banco.
 
 globals:
   PASSWD: ${fn.password}
@@ -35,8 +35,6 @@ settings:
       values:
         - value: "2.4.54-php-7.4.33"
           caption: "Apache 2.4.54 + PHP 7.4"
-        - value: "2.4.52-php-7.3.33"
-          caption: "Apache 2.4.52 + PHP 7.3"
 
     - type: list
       name: mysql_tag
@@ -47,8 +45,6 @@ settings:
       values:
         - value: "9.3.0-almalinux-9"
           caption: "MySQL 9.3.0 (AlmaLinux 9)"
-        - value: "8.0-latest"
-          caption: "MySQL 8.0 (latest)"
 
 nodes:
   - nodeType: nginx
@@ -63,12 +59,6 @@ nodes:
     nodeGroup: cp
     count: 1
     displayName: ApachePHP
-    env:
-      DB_HOST: ${globals.DBHOST}
-      DB_PORT: ${globals.DBPORT}
-      DB_NAME: ${globals.DBNAME}
-      DB_USER: root
-      DB_PASS: ${globals.PASSWD}
 
   - fixedCloudlets: 1
     cloudlets: 16
@@ -82,10 +72,10 @@ nodes:
 skipNodeEmails: true
 
 onInstall:
-  # Define senha do root no MySQL (rodar no nodeGroup do banco)
+  # Define senha do root no MySQL (rodar no layer do banco)
   - cmd [sqldb]: /bin/bash /usr/bin/jem passwd set -p ${globals.PASSWD} -u root --timeout 3570
 
-  # Deploy do código no ApachePHP
+  # Deploy do código + cria config do DB no webroot (sem depender de getenv)
   - cmd [cp]:
       - |-
         set -e
@@ -93,6 +83,16 @@ onInstall:
         rm -rf "$WEBROOT"
         mkdir -p "$WEBROOT"
         git clone --depth 1 -b ${settings.git_branch} ${settings.git_repo} "$WEBROOT"
+
+        cat > "$WEBROOT/db_config.php" <<'PHP'
+        <?php
+        define('DB_HOST', '${globals.DBHOST}');
+        define('DB_PORT', '${globals.DBPORT}');
+        define('DB_NAME', '${globals.DBNAME}');
+        define('DB_USER', 'root');
+        define('DB_PASS', '${globals.PASSWD}');
+        PHP
+
         chmod -R 755 "$WEBROOT" || true
 
 success:
@@ -105,18 +105,7 @@ success:
     Usuário: root
     Senha: ${globals.PASSWD}
 
+    Foi criado o arquivo:
+    /var/www/webroot/ROOT/db_config.php
+
     Acesse o endpoint do NGINX para validar a aplicação.
-
-  email: |
-    Seu ambiente foi provisionado com sucesso.
-
-    Dados de acesso ao MySQL:
-
-    Host interno: ${globals.DBHOST}:${globals.DBPORT}
-    Database: ${globals.DBNAME}
-    Usuário: root
-    Senha: ${globals.PASSWD}
-
-    A aplicação já está implantada e registrando acessos.
-
-  log: "Sending success email and finishing installation"
