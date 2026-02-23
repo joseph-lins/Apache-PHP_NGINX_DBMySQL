@@ -1,10 +1,11 @@
 type: install
-id: lab-apachephp-nginx-mysql-image-based
-version: 1.0
-name: Lab ApachePHP + NGINX + MySQL
+id: lab-apachephp-nginx-mysql-image-bsb
+version: 1.5
+name: Lab ApachePHP + NGINX + MySQL (BSB - FIX image)
 
 description:
-  text: NGINX + ApachePHP + MySQL
+  text: Cria NGINX + ApachePHP + MySQL via imagens jelastic (corrige bug do nodeType mysql na região bsb), gera senha root e faz deploy via Git.
+
 globals:
   PASSWD: ${fn.password}
   DBNAME: demo_access
@@ -25,45 +26,47 @@ settings:
       required: true
       default: "main"
 
+    # ApachePHP: escolha uma versão que existe (igual seu exemplo)
     - type: list
-      name: apachephp_image
+      name: apachephp_tag
       caption:
         pt: "Versão do ApachePHP"
         en: "ApachePHP version"
       required: true
       values:
-        - value: "jelastic/apachephp:2.4.54-php-7.4.33"
+        - value: "2.4.54-php-7.4.33"
           caption: "Apache 2.4.54 + PHP 7.4"
-        - value: "jelastic/apachephp:2.4.52-php-7.3.33"
+        - value: "2.4.52-php-7.3.33"
           caption: "Apache 2.4.52 + PHP 7.3"
 
+    # MySQL: comece pelo 9.3.0 (você viu STACK_VERSION 9.3.0)
     - type: list
-      name: mysql_image
+      name: mysql_tag
       caption:
         pt: "Versão do MySQL"
         en: "MySQL version"
       required: true
       values:
-        - value: "jelastic/mysql:9.6.0-almalinux-9"
-          caption: "MySQL 9.6.0 (AlmaLinux 9)"
-        - value: "jelastic/mysql:9.3.0-almalinux-9"
+        - value: "9.3.0-almalinux-9"
           caption: "MySQL 9.3.0 (AlmaLinux 9)"
-        - value: "jelastic/mysql:8.0-latest"
+        - value: "8.0-latest"
           caption: "MySQL 8.0 (latest)"
 
 nodes:
+  # NGINX LB (nodeType OK)
   - nodeType: nginx
     nodeGroup: bl
     cloudlets: 8
     count: 1
     displayName: NGINX Load Balancer
 
+  # ApachePHP via IMAGE (evita nodeType apachephp)
   - fixedCloudlets: 1
     cloudlets: 8
-    image: ${settings.apachephp_image}
+    image: jelastic/apachephp:${settings.apachephp_tag}
     nodeGroup: cp
     count: 1
-    displayName: ApachePHP (Aplicação)
+    displayName: ApachePHP
     env:
       DB_HOST: ${globals.DBHOST}
       DB_PORT: ${globals.DBPORT}
@@ -71,20 +74,23 @@ nodes:
       DB_USER: root
       DB_PASS: ${globals.PASSWD}
 
+  # MySQL via IMAGE (NÃO usar nodeType mysql)
   - fixedCloudlets: 1
     cloudlets: 16
-    image: ${settings.mysql_image}
+    image: jelastic/mysql:${settings.mysql_tag}
     nodeGroup: cp
     count: 1
-    displayName: MySQL (Banco)
+    displayName: MySQL
     env:
       JELASTIC_EXPOSE: false
 
 skipNodeEmails: true
 
 onInstall:
+  # Define senha do root no MySQL (como marketplace)
   - cmd [cp]: /bin/bash /usr/bin/jem passwd set -p ${globals.PASSWD} -u root --timeout 3570
 
+  # Deploy do código no ApachePHP
   - cmd [cp]:
       - |-
         set -e
