@@ -4,7 +4,7 @@ version: 2.6
 name: Lab Apache + NGINX + MySQL
 
 description:
-  text: NGINX + Apache (stack) + MySQL com deploy via Git e db_config.php automático.
+  text: NGINX + Apache (stack) + MySQL 
 
 globals:
   PASSWD: ${fn.password}
@@ -14,10 +14,17 @@ globals:
 
 settings:
   fields:
-    - type: region
+    - type: list
       name: region
       caption: "Região"
       required: true
+      values:
+        - value: sp1
+          caption: "São Paulo (sp1)"
+        - value: for
+          caption: "Fortaleza (for)"
+        - value: bsb
+          caption: "Brasília (bsb)"
 
     - type: string
       name: git_repo
