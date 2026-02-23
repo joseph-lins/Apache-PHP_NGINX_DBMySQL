@@ -1,10 +1,10 @@
 type: install
 id: lab-apache-nginx-mysql-bsb
-version: 2.4 ! 
+version: 2.4.1 ! 
 name: Lab Apache + NGINX + MySQL (BSB)
 
 description:
-  text: NGINX (LB) + Apache (stack) + MySQL (image) com deploy via Git e db_config.php gerado no webroot.
+  text: NGINX + Apache + MySQL
 
 env:
   region: bsb
