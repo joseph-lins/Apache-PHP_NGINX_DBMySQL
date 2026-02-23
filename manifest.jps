@@ -1,15 +1,15 @@
 type: install
-id: lab-apache-nginx-mysql-bsb
-version: 2.4.1 ! 
-name: Lab Apache + NGINX + MySQL (BSB)
+id: lab-apache-nginx-mysql-stack-bsb
+version: 2.5
+name: Lab Apache + NGINX + MySQL
 
 description:
-  text: NGINX + Apache + MySQL
+  text: NGINX + Apache (stack) + MySQL com deploy via Git e db_config.php automático.
 
 env:
   region: bsb
-  shortdomain: lab-apache-nginx-mysql
   displayName: Lab Apache + NGINX + MySQL
+  shortdomain: lab-${fn.random}
   sslstate: false
 
 globals:
@@ -53,7 +53,7 @@ nodes:
     nodeGroup: cp
     cloudlets: 8
     count: 1
-    displayName: Apache (PHP via stack)
+    displayName: Apache (stack)
 
   - fixedCloudlets: 1
     cloudlets: 16
@@ -92,16 +92,15 @@ success:
   text: |
     Ambiente criado com sucesso.
 
-    Stack Apache: via nodeType "apache" (usa as versões do painel na região bsb)
+    Stack Apache: nodeType apache (usa versão definida no painel da região bsb)
     MySQL: jelastic/mysql:${settings.mysql_tag}
 
-    Credenciais do MySQL (ROOT):
-    Host interno: ${globals.DBHOST}:${globals.DBPORT}
+    Host interno MySQL: ${globals.DBHOST}:${globals.DBPORT}
     Database: ${globals.DBNAME}
     Usuário: root
     Senha: ${globals.PASSWD}
 
-    Foi criado o arquivo:
+    Arquivo criado:
     /var/www/webroot/ROOT/db_config.php
 
-    Acesse o endpoint do NGINX para validar a aplicação.
+    Acesse o endpoint do NGINX para validar.
