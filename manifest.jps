@@ -1,0 +1,97 @@
+type: install
+id: lab-apachephp-nginx-mysql-stack960
+version: 1.0
+name: Lab ApachePHP + NGINX + MySQL 9.6.0 (Root Auto Password)
+
+description:
+  text: Implanta NGINX + ApachePHP + MySQL stack 9.6.0, gera senha root automaticamente e faz deploy via Git.
+
+globals:
+  PASSWD: ${fn.password}
+  DBNAME: demo_access
+  DBHOST: mysql
+  DBPORT: 3306
+
+settings:
+  fields:
+    - type: string
+      name: git_repo
+      caption: "Git repo URL"
+      required: true
+      default: "https://github.com/joseph-lins/Apache-PHP_NGINX_DBMySQL.git"
+    - type: string
+      name: git_branch
+      caption: "Git branch/tag"
+      required: true
+      default: "main"
+
+nodes:
+
+  - nodeType: nginx
+    nodeGroup: bl
+    cloudlets: 8
+    count: 1
+    displayName: NGINX Load Balancer
+
+  - nodeType: apachephp
+    nodeGroup: cp
+    cloudlets: 8
+    count: 1
+    displayName: ApachePHP
+    env:
+      DB_HOST: ${globals.DBHOST}
+      DB_PORT: ${globals.DBPORT}
+      DB_NAME: ${globals.DBNAME}
+      DB_USER: root
+      DB_PASS: ${globals.PASSWD}
+
+  - nodeType: mysql
+    nodeGroup: cp
+    cloudlets: 16
+    count: 1
+    displayName: MySQL 9.6.0
+    env:
+      JELASTIC_EXPOSE: false
+
+skipNodeEmails: true
+
+onInstall:
+
+  # Define senha do root usando JEM (igual marketplace)
+  - cmd [cp]: /bin/bash /usr/bin/jem passwd set -p ${globals.PASSWD} -u root --timeout 3570
+
+  # Deploy do código no Apache
+  - cmd [cp]:
+      - |-
+        set -e
+        WEBROOT="/var/www/webroot/ROOT"
+        rm -rf "$WEBROOT"
+        mkdir -p "$WEBROOT"
+        git clone --depth 1 -b ${settings.git_branch} ${settings.git_repo} "$WEBROOT"
+        chmod -R 755 "$WEBROOT" || true
+
+success:
+  text: |
+    Ambiente criado com sucesso.
+
+    Credenciais do MySQL (ROOT):
+    Host interno: ${globals.DBHOST}:${globals.DBPORT}
+    Database: ${globals.DBNAME}
+    Usuário: root
+    Senha: ${globals.PASSWD}
+
+    Acesse o endpoint do NGINX para validar a aplicação.
+
+  email: |
+    Seu ambiente foi provisionado com sucesso.
+
+    Dados de acesso ao MySQL:
+
+    Host interno: ${globals.DBHOST}:${globals.DBPORT}
+    Database: ${globals.DBNAME}
+    Usuário: root
+    Senha: ${globals.PASSWD}
+
+    A aplicação já está implantada e registrando acessos.
+
+  log: "Sending success email and finishing installation"
