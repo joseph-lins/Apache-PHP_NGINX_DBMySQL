@@ -1,16 +1,10 @@
 type: install
-id: lab-apache-nginx-mysql-stack-bsb
-version: 2.5
+id: lab-apache-nginx-mysql-stack
+version: 2.6
 name: Lab Apache + NGINX + MySQL
 
 description:
   text: NGINX + Apache (stack) + MySQL com deploy via Git e db_config.php automático.
-
-env:
-  region: bsb
-  displayName: Lab Apache + NGINX + MySQL
-  shortdomain: lab-${fn.random}
-  sslstate: false
 
 globals:
   PASSWD: ${fn.password}
@@ -20,6 +14,11 @@ globals:
 
 settings:
   fields:
+    - type: region
+      name: region
+      caption: "Região"
+      required: true
+
     - type: string
       name: git_repo
       caption: "Git repo URL"
@@ -41,6 +40,12 @@ settings:
       values:
         - value: "9.3.0-almalinux-9"
           caption: "MySQL 9.3.0 (AlmaLinux 9)"
+
+env:
+  region: ${settings.region}
+  displayName: Lab Apache + NGINX + MySQL
+  shortdomain: lab-${fn.random}
+  sslstate: false
 
 nodes:
   - nodeType: nginx
@@ -92,7 +97,7 @@ success:
   text: |
     Ambiente criado com sucesso.
 
-    Stack Apache: nodeType apache (usa versão definida no painel da região bsb)
+    Stack Apache: nodeType apache
     MySQL: jelastic/mysql:${settings.mysql_tag}
 
     Host interno MySQL: ${globals.DBHOST}:${globals.DBPORT}
