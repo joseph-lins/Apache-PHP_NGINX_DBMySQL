@@ -7,90 +7,34 @@ function html($s) {
     return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-// Validação básica
-if (!DB_PASS) {
-    http_response_code(500);
-    echo "<h1>CONFIGURAÇÃO INCOMPLETA</h1>";
-    echo "<p>DB_PASS não foi definido nas variáveis de ambiente.</p>";
-    exit;
-}
+$xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null;
+$forwarded_for = $xff ? trim(explode(',', $xff)[0]) : null;
 
-$dsn = sprintf(
-    "mysql:host=%s;port=%s;charset=utf8mb4",
-    DB_HOST,
-    DB_PORT
-);
+$stmt = $pdo->prepare("
+    INSERT INTO access_log (
+        remote_addr,
+        forwarded_for,
+        request_method,
+        request_uri,
+        user_agent
+    ) VALUES (
+        :remote_addr,
+        :forwarded_for,
+        :method,
+        :uri,
+        :ua
+    )
+");
 
-try {
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_TIMEOUT => 3,
-    ]);
+$stmt->execute([
+    ':remote_addr'   => $_SERVER['REMOTE_ADDR'] ?? null,
+    ':forwarded_for' => $forwarded_for,
+    ':method'        => $_SERVER['REQUEST_METHOD'] ?? null,
+    ':uri'           => $_SERVER['REQUEST_URI'] ?? null,
+    ':ua'            => $_SERVER['HTTP_USER_AGENT'] ?? null,
+]);
 
-    // Cria banco se não existir
-    $pdo->exec("
-        CREATE DATABASE IF NOT EXISTS `" . DB_NAME . "`
-        CHARACTER SET utf8mb4
-        COLLATE utf8mb4_unicode_ci
-    ");
-
-    $pdo->exec("USE `" . DB_NAME . "`");
-
-    // Cria tabela se não existir
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS access_log (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            accessed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            remote_addr VARCHAR(45) NULL,
-            forwarded_for VARCHAR(255) NULL,
-            request_method VARCHAR(10) NULL,
-            request_uri VARCHAR(2048) NULL,
-            user_agent VARCHAR(512) NULL,
-            PRIMARY KEY (id),
-            KEY idx_accessed_at (accessed_at)
-        ) ENGINE=InnoDB
-        DEFAULT CHARSET=utf8mb4
-        COLLATE=utf8mb4_unicode_ci
-    ");
-
-    // Captura IP real (atrás do NGINX)
-    $xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null;
-    $forwarded_for = $xff ? trim(explode(',', $xff)[0]) : null;
-
-    // Insere registro
-    $stmt = $pdo->prepare("
-        INSERT INTO access_log (
-            remote_addr,
-            forwarded_for,
-            request_method,
-            request_uri,
-            user_agent
-        ) VALUES (
-            :remote_addr,
-            :forwarded_for,
-            :method,
-            :uri,
-            :ua
-        )
-    ");
-
-    $stmt->execute([
-        ':remote_addr'   => $_SERVER['REMOTE_ADDR'] ?? null,
-        ':forwarded_for' => $forwarded_for,
-        ':method'        => $_SERVER['REQUEST_METHOD'] ?? null,
-        ':uri'           => $_SERVER['REQUEST_URI'] ?? null,
-        ':ua'            => $_SERVER['HTTP_USER_AGENT'] ?? null,
-    ]);
-
-    $lastId = $pdo->lastInsertId();
-
-} catch (Throwable $e) {
-    http_response_code(500);
-    echo "<h1>ERRO AO CONECTAR/GRAVAR NO MYSQL</h1>";
-    echo "<pre>" . html($e->getMessage()) . "</pre>";
-    exit;
-}
+$lastId = $pdo->lastInsertId();
 ?>
 <!doctype html>
 <html lang="pt-BR">
