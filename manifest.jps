@@ -1,7 +1,7 @@
 type: install
 id: lab-apachephp-nginx-mysql-image-bsb
-version: 1.5
-name: Lab ApachePHP + NGINX + MySQL 
+version: 1.7
+name: Lab ApachePHP + NGINX + MySQL
 
 description:
   text: NGINX + ApachePHP + MySQL
@@ -9,7 +9,7 @@ description:
 globals:
   PASSWD: ${fn.password}
   DBNAME: demo_access
-  DBHOST: mysql
+  DBHOST: sqldb
   DBPORT: 3306
 
 settings:
@@ -26,7 +26,6 @@ settings:
       required: true
       default: "main"
 
-    # ApachePHP: escolha uma versão que existe (igual seu exemplo)
     - type: list
       name: apachephp_tag
       caption:
@@ -39,7 +38,6 @@ settings:
         - value: "2.4.52-php-7.3.33"
           caption: "Apache 2.4.52 + PHP 7.3"
 
-    # MySQL: comece pelo 9.3.0 (você viu STACK_VERSION 9.3.0)
     - type: list
       name: mysql_tag
       caption:
@@ -53,14 +51,12 @@ settings:
           caption: "MySQL 8.0 (latest)"
 
 nodes:
-  # NGINX LB (nodeType OK)
   - nodeType: nginx
     nodeGroup: bl
     cloudlets: 8
     count: 1
     displayName: NGINX Load Balancer
 
-  # ApachePHP via IMAGE (evita nodeType apachephp)
   - fixedCloudlets: 1
     cloudlets: 8
     image: jelastic/apachephp:${settings.apachephp_tag}
@@ -74,11 +70,10 @@ nodes:
       DB_USER: root
       DB_PASS: ${globals.PASSWD}
 
-  # MySQL via IMAGE (NÃO usar nodeType mysql)
   - fixedCloudlets: 1
     cloudlets: 16
     image: jelastic/mysql:${settings.mysql_tag}
-    nodeGroup: cp
+    nodeGroup: sqldb
     count: 1
     displayName: MySQL
     env:
@@ -87,8 +82,8 @@ nodes:
 skipNodeEmails: true
 
 onInstall:
-  # Define senha do root no MySQL (como marketplace)
-  - cmd [cp]: /bin/bash /usr/bin/jem passwd set -p ${globals.PASSWD} -u root --timeout 3570
+  # Define senha do root no MySQL (rodar no nodeGroup do banco)
+  - cmd [sqldb]: /bin/bash /usr/bin/jem passwd set -p ${globals.PASSWD} -u root --timeout 3570
 
   # Deploy do código no ApachePHP
   - cmd [cp]:
