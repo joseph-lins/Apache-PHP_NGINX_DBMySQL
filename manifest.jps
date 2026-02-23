@@ -1,10 +1,10 @@
 type: install
-id: lab-apache-nginx-mysql-stack
-version: 2.6
-name: Lab Apache + NGINX + MySQL
+id: lab-apachephp-nginx-mysql-image-bsb
+version: 1.6
+name: Lab ApachePHP + NGINX + MySQL 
 
 description:
-  text: NGINX + Apache (stack) + MySQL 
+  text: NGINX + ApachePHP + MySQL
 
 globals:
   PASSWD: ${fn.password}
@@ -14,18 +14,6 @@ globals:
 
 settings:
   fields:
-    - type: list
-      name: region
-      caption: "Região"
-      required: true
-      values:
-        - value: sp1
-          caption: "São Paulo (sp1)"
-        - value: for
-          caption: "Fortaleza (for)"
-        - value: bsb
-          caption: "Brasília (bsb)"
-
     - type: string
       name: git_repo
       caption: "Git repo URL"
@@ -39,6 +27,16 @@ settings:
       default: "main"
 
     - type: list
+      name: apachephp_tag
+      caption:
+        pt: "Versão do ApachePHP"
+        en: "ApachePHP version"
+      required: true
+      values:
+        - value: "2.4.54-php-7.4.33"
+          caption: "Apache 2.4.54 + PHP 7.4"
+
+    - type: list
       name: mysql_tag
       caption:
         pt: "Versão do MySQL"
@@ -48,12 +46,6 @@ settings:
         - value: "9.3.0-almalinux-9"
           caption: "MySQL 9.3.0 (AlmaLinux 9)"
 
-env:
-  region: ${settings.region}
-  displayName: Lab Apache + NGINX + MySQL
-  shortdomain: lab-${fn.random}
-  sslstate: false
-
 nodes:
   - nodeType: nginx
     nodeGroup: bl
@@ -61,11 +53,12 @@ nodes:
     count: 1
     displayName: NGINX Load Balancer
 
-  - nodeType: apache
-    nodeGroup: cp
+  - fixedCloudlets: 1
     cloudlets: 8
+    image: jelastic/apachephp:${settings.apachephp_tag}
+    nodeGroup: cp
     count: 1
-    displayName: Apache (stack)
+    displayName: ApachePHP
 
   - fixedCloudlets: 1
     cloudlets: 16
@@ -104,15 +97,13 @@ success:
   text: |
     Ambiente criado com sucesso.
 
-    Stack Apache: nodeType apache
-    MySQL: jelastic/mysql:${settings.mysql_tag}
-
-    Host interno MySQL: ${globals.DBHOST}:${globals.DBPORT}
+    Credenciais do MySQL (ROOT):
+    Host interno: ${globals.DBHOST}:${globals.DBPORT}
     Database: ${globals.DBNAME}
     Usuário: root
     Senha: ${globals.PASSWD}
 
-    Arquivo criado:
+    Foi criado o arquivo:
     /var/www/webroot/ROOT/db_config.php
 
-    Acesse o endpoint do NGINX para validar.
+    Acesse o endpoint do NGINX para validar a aplicação.
