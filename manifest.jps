@@ -1,11 +1,10 @@
 type: install
 id: lab-apachephp-nginx-mysql-stack960
 version: 1.0
-name: Lab ApachePHP + NGINX + MySQL 9.6.0 (Root Auto Password)
+name: ApachePHP + NGINX + MySQL 9.6.0 
 
 description:
-  text: Implanta NGINX + ApachePHP + MySQL stack 9.6.0, gera senha root automaticamente e faz deploy via Git.
-
+  text: NGINX + ApachePHP + MySQL
 globals:
   PASSWD: ${fn.password}
   DBNAME: demo_access
