@@ -1,6 +1,6 @@
 type: install
 id: lab-apachephp-nginx-mysql-image-bsb
-version: 1.6
+version: 3.0 !
 name: Lab ApachePHP + NGINX + MySQL 
 
 description:
