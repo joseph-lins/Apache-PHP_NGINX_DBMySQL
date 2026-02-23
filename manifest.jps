@@ -1,7 +1,7 @@
 type: install
-id: lab-apachephp-nginx-mysql-stack960
+id: lab-apachephp-nginx-mysql-image-based
 version: 1.0
-name: ApachePHP + NGINX + MySQL 9.6.0 
+name: Lab ApachePHP + NGINX + MySQL
 
 description:
   text: NGINX + ApachePHP + MySQL
@@ -18,25 +18,52 @@ settings:
       caption: "Git repo URL"
       required: true
       default: "https://github.com/joseph-lins/Apache-PHP_NGINX_DBMySQL.git"
+
     - type: string
       name: git_branch
       caption: "Git branch/tag"
       required: true
       default: "main"
 
-nodes:
+    - type: list
+      name: apachephp_image
+      caption:
+        pt: "Versão do ApachePHP"
+        en: "ApachePHP version"
+      required: true
+      values:
+        - value: "jelastic/apachephp:2.4.54-php-7.4.33"
+          caption: "Apache 2.4.54 + PHP 7.4"
+        - value: "jelastic/apachephp:2.4.52-php-7.3.33"
+          caption: "Apache 2.4.52 + PHP 7.3"
 
+    - type: list
+      name: mysql_image
+      caption:
+        pt: "Versão do MySQL"
+        en: "MySQL version"
+      required: true
+      values:
+        - value: "jelastic/mysql:9.6.0-almalinux-9"
+          caption: "MySQL 9.6.0 (AlmaLinux 9)"
+        - value: "jelastic/mysql:9.3.0-almalinux-9"
+          caption: "MySQL 9.3.0 (AlmaLinux 9)"
+        - value: "jelastic/mysql:8.0-latest"
+          caption: "MySQL 8.0 (latest)"
+
+nodes:
   - nodeType: nginx
     nodeGroup: bl
     cloudlets: 8
     count: 1
     displayName: NGINX Load Balancer
 
-  - nodeType: apache
-    nodeGroup: cp
+  - fixedCloudlets: 1
     cloudlets: 8
+    image: ${settings.apachephp_image}
+    nodeGroup: cp
     count: 1
-    displayName: ApachePHP
+    displayName: ApachePHP (Aplicação)
     env:
       DB_HOST: ${globals.DBHOST}
       DB_PORT: ${globals.DBPORT}
@@ -44,22 +71,20 @@ nodes:
       DB_USER: root
       DB_PASS: ${globals.PASSWD}
 
-  - nodeType: mysql
-    nodeGroup: cp
+  - fixedCloudlets: 1
     cloudlets: 16
+    image: ${settings.mysql_image}
+    nodeGroup: cp
     count: 1
-    displayName: MySQL 9.6.0
+    displayName: MySQL (Banco)
     env:
       JELASTIC_EXPOSE: false
 
 skipNodeEmails: true
 
 onInstall:
-
-  # Define senha do root usando JEM (igual marketplace)
   - cmd [cp]: /bin/bash /usr/bin/jem passwd set -p ${globals.PASSWD} -u root --timeout 3570
 
-  # Deploy do código no Apache
   - cmd [cp]:
       - |-
         set -e
